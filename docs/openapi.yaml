@@ -1,0 +1,547 @@
+openapi: 3.1.0
+info:
+  title: Incident Attribution Suite API
+  version: 0.1.0
+  description: |
+    API draft for incident attribution, evidence freezing, and document generation.
+servers:
+  - url: http://localhost:8000
+tags:
+  - name: health
+  - name: ingest
+  - name: search
+  - name: cases
+  - name: documents
+  - name: alerts
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /v1/events:ingest:
+    post:
+      tags: [ingest]
+      summary: Ingest raw artifact and normalized events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestRequest'
+      responses:
+        '201':
+          description: Ingested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestResponse'
+  /v1/search/correlate:
+    post:
+      tags: [search]
+      summary: Correlate events, assets, users, and cases for a query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrelateRequest'
+      responses:
+        '200':
+          description: Correlation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrelateResponse'
+  /v1/cases:
+    post:
+      tags: [cases]
+      summary: Create a case
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+      responses:
+        '201':
+          description: Case created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+    get:
+      tags: [cases]
+      summary: List cases
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: severity
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Case list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Case'
+                  total:
+                    type: integer
+  /v1/cases/{caseId}:
+    get:
+      tags: [cases]
+      summary: Get case detail
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Case detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '404':
+          description: Not found
+    patch:
+      tags: [cases]
+      summary: Update case
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCaseRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+  /v1/cases/{caseId}/freeze:
+    post:
+      tags: [cases]
+      summary: Freeze evidence for a case
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Freeze requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreezeResponse'
+  /v1/cases/{caseId}/documents:
+    post:
+      tags: [documents]
+      summary: Generate a document from a case snapshot
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateDocumentRequest'
+      responses:
+        '201':
+          description: Document generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+  /v1/documents/{documentId}/review:
+    post:
+      tags: [documents]
+      summary: Review a generated document
+      parameters:
+        - in: path
+          name: documentId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDocumentRequest'
+      responses:
+        '200':
+          description: Reviewed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+  /v1/alerts:
+    get:
+      tags: [alerts]
+      summary: List alerts
+      responses:
+        '200':
+          description: Alert list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+  /v1/alerts/{alertId}/promote:
+    post:
+      tags: [alerts]
+      summary: Promote alert to case
+      parameters:
+        - in: path
+          name: alertId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Case created from alert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+components:
+  schemas:
+    IngestRequest:
+      type: object
+      required: [sourceName, sourceType, collectedAt, payload]
+      properties:
+        sourceName:
+          type: string
+        sourceType:
+          type: string
+          enum: [WEB, WAF, VPN, AD, EDR, DHCP, NAT, FW, DB, APP, OTHER]
+        collectedAt:
+          type: string
+          format: date-time
+        payload:
+          description: Raw log lines or parsed records for MVP
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+    IngestResponse:
+      type: object
+      properties:
+        rawArtifactId:
+          type: string
+          format: uuid
+        normalizedEventCount:
+          type: integer
+        checksumSha256:
+          type: string
+    CorrelateRequest:
+      type: object
+      required: [queryType, queryValue, timeFrom, timeTo]
+      properties:
+        queryType:
+          type: string
+          enum: [ip, username, hostname, session, domain]
+        queryValue:
+          type: string
+        timeFrom:
+          type: string
+          format: date-time
+        timeTo:
+          type: string
+          format: date-time
+    CorrelateResponse:
+      type: object
+      properties:
+        relatedEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/NormalizedEvent'
+        relatedCases:
+          type: array
+          items:
+            $ref: '#/components/schemas/Case'
+        candidateAssets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asset'
+        candidateUsers:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        attributionPreview:
+          $ref: '#/components/schemas/AttributionPreview'
+    CreateCaseRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        primaryIp:
+          type: string
+        seedEventIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        notes:
+          type: string
+    UpdateCaseRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+          enum: [NEW, TRIAGED, INVESTIGATING, READY_FOR_REVIEW, READY_FOR_EXPORT, CLOSED, REJECTED]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        assignee:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    FreezeResponse:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          format: uuid
+        frozenEvidenceCount:
+          type: integer
+        manifestChecksum:
+          type: string
+        status:
+          type: string
+          example: queued
+    GenerateDocumentRequest:
+      type: object
+      required: [docType, templateVersion]
+      properties:
+        docType:
+          type: string
+          enum: [case_summary, evidence_manifest, complaint_draft]
+        templateVersion:
+          type: string
+          example: v1
+    ReviewDocumentRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [approve, reject, request_changes]
+        comment:
+          type: string
+    Case:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        caseNo:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        severity:
+          type: string
+        primaryIp:
+          type: string
+        confidenceGrade:
+          type: string
+        openedAt:
+          type: string
+          format: date-time
+    CaseDetail:
+      allOf:
+        - $ref: '#/components/schemas/Case'
+        - type: object
+          properties:
+            summary:
+              type: string
+            attributionLinks:
+              type: array
+              items:
+                $ref: '#/components/schemas/AttributionPreview'
+            timeline:
+              type: array
+              items:
+                $ref: '#/components/schemas/NormalizedEvent'
+            evidence:
+              type: array
+              items:
+                $ref: '#/components/schemas/Evidence'
+            documents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Document'
+    NormalizedEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        eventTime:
+          type: string
+          format: date-time
+        sourceType:
+          type: string
+        eventType:
+          type: string
+        srcIp:
+          type: string
+        hostname:
+          type: string
+        username:
+          type: string
+        requestHost:
+          type: string
+        requestPath:
+          type: string
+        statusCode:
+          type: integer
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        assetTag:
+          type: string
+        hostname:
+          type: string
+        serialNumber:
+          type: string
+        deviceType:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+    AttributionPreview:
+      type: object
+      properties:
+        actorType:
+          type: string
+          enum: [INTERNAL_USER, EXTERNAL_UNKNOWN, SERVICE_ACCOUNT, SYSTEM]
+        displayName:
+          type: string
+          example: 성명불상
+        observedIp:
+          type: string
+        confidenceScore:
+          type: number
+        confidenceGrade:
+          type: string
+          enum: [A, B, C, D]
+        rationale:
+          type: string
+    Evidence:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        evidenceType:
+          type: string
+        sha256:
+          type: string
+        status:
+          type: string
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        docType:
+          type: string
+        status:
+          type: string
+        versionNo:
+          type: integer
+        checksumSha256:
+          type: string
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        severity:
+          type: string
+        score:
+          type: number
+        status:
+          type: string
