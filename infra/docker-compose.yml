@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
@@ -41,12 +39,20 @@ services:
 
   api:
     image: python:3.12-slim
-    working_dir: /workspace
-    command: bash -lc "echo 'Implement apps/api and replace this placeholder command.' && sleep infinity"
+    working_dir: /workspace/apps/api
+    command: >
+      sh -lc "pip install --no-cache-dir -e '.[dev]' &&
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ..:/workspace
     ports:
       - "8000:8000"
+    environment:
+      IAS_DATABASE_URL: postgresql+psycopg://app:app@postgres:5432/incident_db
+      IAS_OPENSEARCH_URL: http://opensearch:9200
+      IAS_MINIO_ENDPOINT: http://minio:9000
+      IAS_REDIS_URL: redis://redis:6379/0
     depends_on:
       - postgres
       - opensearch
@@ -56,11 +62,15 @@ services:
   web:
     image: node:22
     working_dir: /workspace
-    command: bash -lc "echo 'Implement apps/web and replace this placeholder command.' && sleep infinity"
+    command: >
+      sh -lc "npm install &&
+      npm run dev --workspace @incident-attribution/web -- --host 0.0.0.0 --port 5173"
     volumes:
       - ..:/workspace
     ports:
       - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
     depends_on:
       - api
 

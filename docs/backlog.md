@@ -1,27 +1,27 @@
 # Backlog
 
 ## Epic 1. Foundation
-- [ ] monorepo scaffold 생성
-- [ ] FastAPI 앱 초기화
-- [ ] React 앱 초기화
-- [ ] Docker Compose 작성
+- [x] monorepo scaffold 생성
+- [x] FastAPI 앱 초기화
+- [x] React 앱 초기화
+- [x] Docker Compose 작성
 - [ ] Postgres/OpenSearch/MinIO 연결
-- [ ] 환경설정 로더 작성
+- [x] 환경설정 로더 작성
 
 ## Epic 2. Data & Ingestion
-- [ ] source registry 모델 구현
+- [x] source registry 모델 구현
 - [ ] raw artifact 업로드 API
 - [ ] parser 인터페이스
-- [ ] canonical event 모델 구현
+- [x] canonical event 모델 구현
 - [ ] sample parsers: nginx, waf, vpn
-- [ ] ingest audit log 작성
+- [x] ingest audit log 작성
 
 ## Epic 3. Case Management
-- [ ] case schema/model/service
+- [x] case schema/model/service
 - [ ] case create/get/update API
-- [ ] case list/filter API
-- [ ] UI case list page
-- [ ] UI case detail page
+- [x] case list/filter API
+- [x] UI case list page
+- [x] UI case detail page
 
 ## Epic 4. Search & Correlation
 - [ ] correlate API
@@ -32,11 +32,11 @@
 - [ ] candidate asset/user cards
 
 ## Epic 5. Evidence Vault
-- [ ] freeze case endpoint
-- [ ] manifest JSON 생성
+- [x] freeze case endpoint
+- [x] manifest JSON 생성
 - [ ] evidence list UI
 - [ ] export metadata
-- [ ] checksum validation
+- [x] checksum validation
 
 ## Epic 6. Attribution Engine
 - [ ] DHCP binding model/parser
@@ -55,8 +55,8 @@
 - [ ] document list/download UI
 
 ## Epic 8. Security & Governance
-- [ ] RBAC middleware
-- [ ] audit log append
+- [x] RBAC middleware
+- [x] audit log append
 - [ ] masking utilities
 - [ ] approval workflow
 - [ ] retention policy config
@@ -70,16 +70,16 @@
 - [ ] dashboard widgets
 
 ## P0 이번 주 즉시 작업
-- [ ] `GET /healthz`
-- [ ] `POST /v1/events:ingest`
-- [ ] `POST /v1/cases`
-- [ ] `GET /v1/cases/{caseId}`
-- [ ] `POST /v1/cases/{caseId}/freeze`
-- [ ] migration + tests + compose
+- [x] `GET /healthz`
+- [x] `POST /v1/events:ingest`
+- [x] `POST /v1/cases`
+- [x] `GET /v1/cases/{caseId}`
+- [x] `POST /v1/cases/{caseId}/freeze`
+- [x] migration + tests + compose
 
 ## Codex 실행 지시용 체크
-- [ ] AGENTS.md 읽기
-- [ ] PRD.md 반영
-- [ ] schema.sql 기준으로 모델 생성
-- [ ] openapi.yaml 기준 라우팅 스켈레톤 생성
-- [ ] pytest 기본 통과
+- [x] AGENTS.md 읽기
+- [x] PRD.md 반영
+- [x] schema.sql 기준으로 모델 생성
+- [x] openapi.yaml 기준 라우팅 스켈레톤 생성
+- [x] pytest 기본 통과

@@ -1,0 +1,12 @@
+{
+  "name": "incident-attribution-suite",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/contracts"
+  ],
+  "scripts": {
+    "web:dev": "npm run dev --workspace @incident-attribution/web",
+    "web:build": "npm run build --workspace @incident-attribution/web"
+  }
+}

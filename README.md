@@ -1,58 +1,108 @@
 # Incident Attribution Suite
 
-자사 서비스/도메인에 대한 비정상 접근, 데이터 열람·반출 시도, 관리자 경로 접근, 인증 우회 정황을
-상관분석하여 **IP → 단말(PC) → 계정/사용자 → 증거 패키지 → 고소장 초안**까지 연결하는
-내부 조사·증거관리 시스템의 기획 패키지입니다.
+자사 시스템 로그를 수집·정규화하고, 사건 단위의 증거 보존과 보수적 귀속 정리를 수행하는 내부 조사용 Phase 1 기반 저장소입니다. 현재 저장소에는 FastAPI API, React/Vite 웹 셸, 공유 contracts 패키지, 로컬 Docker Compose 구성이 포함됩니다.
 
-이 저장소는 바로 개발을 시작할 수 있도록 다음을 포함합니다.
+## Safety Guardrails
 
-- `PRD.md`: 제품 요구사항 정의서
-- `AGENTS.md`: Codex/코딩 에이전트용 작업 규칙
-- `AGNETS.md`: 오타 호환용 복제본(표준 파일명은 `AGENTS.md`)
-- `docs/`: 아키텍처, 데이터 모델, API, UX, 구현계획, 보안/컴플라이언스 문서
-- `docs/openapi.yaml`: 백엔드 API 초안
-- `docs/schema.sql`: PostgreSQL 스키마 초안
-- `infra/docker-compose.yml`: 로컬 개발용 의존 서비스 초안
+1. 외부 공인 IP 사용자의 실명 추정 또는 자동 특정은 구현하지 않습니다.
+2. 외부 사건은 `EXTERNAL_UNKNOWN` / `성명불상` / `D` 등급 / `통신사/플랫폼/수사기관 조회 필요` 상태를 유지합니다.
+3. 자동 신고·자동 고소·자동 제출 기능은 구현하지 않습니다.
+4. 공격, 스캔, 익스플로잇, 강제 차단, counter-hacking 기능은 구현하지 않습니다.
+5. 생성 문서와 freeze 산출물은 모두 `DRAFT` 또는 review-gated 상태로만 다룹니다.
 
-## 핵심 원칙
+## Repository Layout
 
-1. **내부 귀속(Internal attribution)** 은 DHCP/NAT/VPN/AD/EDR/CMDB 등 자사 보유 데이터로만 수행한다.
-2. **외부 공인 IP의 실명 추정/자동 특정은 금지**한다.
-3. 외부 사건의 피행위자는 기본적으로 `성명불상`으로 두고, 통신사·플랫폼·수사기관 조회 필요 상태로 관리한다.
-4. 고소장/신고서/사건요약은 **자동 생성 가능**, **자동 제출은 금지**한다.
-5. 모든 산출물은 **원본 증거, 해시, 감사로그, 승인흐름**을 동반해야 한다.
+- `apps/api`: FastAPI, SQLAlchemy 2.x, Alembic, pytest
+- `apps/web`: React + TypeScript + Vite
+- `packages/contracts`: API/web 공유 타입
+- `infra/docker-compose.yml`: postgres, opensearch, minio, redis, api, web
+- `docs/`: PRD, 아키텍처, 데이터 모델, API, 보안 문서
 
-## 추천 기술 스택
+## Local Run
 
-- Frontend: React + TypeScript + Vite
-- Backend API: FastAPI + Pydantic v2 + SQLAlchemy 2.x
-- DB: PostgreSQL
-- Search/Correlation: OpenSearch
-- Object Storage(Evidence Vault): MinIO(S3 호환)
-- Queue/Cache: Redis
-- Infra(로컬): Docker Compose
-- Auth: OIDC/SAML 연동 가능한 RBAC 구조
+### Backend
 
-## Codex 시작 순서
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ./apps/api[dev]
+cd apps/api
+alembic upgrade head
+uvicorn app.main:app --reload
+```
 
-1. `AGENTS.md`
-2. `PRD.md`
-3. `docs/architecture.md`
-4. `docs/data-model.md`
-5. `docs/api-spec.md`
-6. `docs/implementation-plan.md`
-7. `docs/backlog.md`
+### Frontend
 
-그 다음, `docs/codex-kickoff-prompt.md`의 프롬프트를 코딩 에이전트에 전달하면 됩니다.
+```bash
+npm install
+npm run dev --workspace @incident-attribution/web
+```
 
-## 비범위(Non-goals)
+### Docker Compose
 
-- 공격용 스캐너, 익스플로잇, 침입 자동화
-- 외부 IP의 불법적 실명 식별
-- 수사기관/통신사 권한을 가장하는 기능
-- 무인 자동 고소/자동 신고
-- 법률 판단을 사람 검토 없이 확정하는 기능
+```bash
+docker compose -f infra/docker-compose.yml up --build
+```
 
-## 참고
+기본 주소:
 
-본 문서는 2026-03-15 기준 요구사항 정리용이며, 실제 제출 문서와 운영 정책은 법무/개인정보보호 책임자/보안책임자의 최종 검토를 거쳐야 합니다.
+- API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+- Web: `http://localhost:5173`
+- OpenSearch: `http://localhost:9200`
+- MinIO console: `http://localhost:9001`
+
+## Test Commands
+
+```bash
+source .venv/bin/activate
+pytest apps/api/tests
+```
+
+## Environment Variables
+
+### API
+
+- `IAS_DATABASE_URL`: SQLAlchemy database URL
+- `IAS_OPENSEARCH_URL`: OpenSearch endpoint for readiness checks
+- `IAS_MINIO_ENDPOINT`: MinIO endpoint for readiness checks
+- `IAS_REDIS_URL`: Redis endpoint for readiness checks
+- `IAS_AUTH_DEFAULT_ACTOR`: placeholder middleware actor name
+- `IAS_AUTH_DEFAULT_ROLES`: placeholder middleware role list
+
+예시 파일: [`apps/api/.env.example`](/Users/jimin/Desktop/study/ip-complaint/apps/api/.env.example)
+
+### Web
+
+- `VITE_API_BASE_URL`: frontend가 호출할 API base URL
+
+예시 파일: [`apps/web/.env.example`](/Users/jimin/Desktop/study/ip-complaint/apps/web/.env.example)
+
+## Implemented In Phase 1
+
+- `GET /healthz`
+- `POST /v1/events:ingest`
+- `GET /v1/cases`
+- `POST /v1/cases`
+- `GET /v1/cases/{caseId}`
+- `POST /v1/cases/{caseId}/freeze`
+- SQLAlchemy 모델과 Alembic 초기 마이그레이션
+- 이벤트 ingest, 케이스 생성/조회, evidence freeze, manifest SHA-256, audit log append 서비스
+- 최소 React app shell, 사건 목록 placeholder, 사건 상세 placeholder, draft 경고 배너
+
+## Stubbed Or Deferred
+
+- OpenSearch 기반 실제 색인/검색 고도화
+- MinIO object upload 및 immutable storage 연동
+- Redis background jobs
+- 내부 귀속 엔진(A/B/C 계산, DHCP/VPN/AD/EDR/CMDB 매핑)
+- 문서 템플릿 렌더링과 승인 워크플로우
+- correlate API, alerts/rules, export bundle ZIP
+
+## Known Limitations
+
+- Phase 1 ingest는 raw artifact 실제 업로드 대신 메타데이터와 checksum만 저장합니다.
+- freeze는 manifest JSON snapshot과 document metadata를 DB에 기록하지만 외부 제출용 최종 문서는 생성하지 않습니다.
+- RBAC는 header 기반 placeholder middleware이며 실제 OIDC/SAML 연동은 후속 단계입니다.
+- 웹 UI는 placeholder 중심이며 사건 생성/수정 폼은 아직 없습니다.
+- Docker Compose의 `api`/`web` 서비스는 컨테이너 시작 시 의존성을 설치하므로 초기 기동 시간이 길 수 있습니다.
