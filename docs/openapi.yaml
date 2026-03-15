@@ -24,11 +24,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
+                $ref: '#/components/schemas/HealthResponse'
   /v1/events:ingest:
     post:
       tags: [ingest]
@@ -290,6 +286,11 @@ components:
           type: integer
         checksumSha256:
           type: string
+        eventIds:
+          type: array
+          items:
+            type: string
+            format: uuid
     CorrelateRequest:
       type: object
       required: [queryType, queryValue, timeFrom, timeTo]
@@ -332,14 +333,23 @@ components:
       properties:
         title:
           type: string
+        summary:
+          type: string
         primaryIp:
           type: string
+        eventIds:
+          type: array
+          items:
+            type: string
+            format: uuid
         seedEventIds:
           type: array
           items:
             type: string
             format: uuid
         notes:
+          type: string
+        severity:
           type: string
     UpdateCaseRequest:
       type: object
@@ -370,7 +380,7 @@ components:
           type: string
         status:
           type: string
-          example: queued
+          example: completed
     GenerateDocumentRequest:
       type: object
       required: [docType, templateVersion]
@@ -408,6 +418,10 @@ components:
           type: string
         confidenceGrade:
           type: string
+        externalActorLabel:
+          type: string
+        summary:
+          type: string
         openedAt:
           type: string
           format: date-time
@@ -416,8 +430,8 @@ components:
         - $ref: '#/components/schemas/Case'
         - type: object
           properties:
-            summary:
-              type: string
+            relatedEventsSummary:
+              $ref: '#/components/schemas/RelatedEventsSummary'
             attributionLinks:
               type: array
               items:
@@ -434,6 +448,25 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Document'
+    RelatedEventsSummary:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+        firstSeenAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        sourceTypes:
+          type: array
+          items:
+            type: string
+        eventTypes:
+          type: array
+          items:
+            type: string
     NormalizedEvent:
       type: object
       properties:
@@ -505,6 +538,8 @@ components:
           enum: [A, B, C, D]
         rationale:
           type: string
+        nextStep:
+          type: string
     Evidence:
       type: object
       properties:
@@ -513,10 +548,24 @@ components:
           format: uuid
         evidenceType:
           type: string
+        rawArtifactId:
+          type: string
+          format: uuid
+        normalizedEventId:
+          type: string
+          format: uuid
+        objectUri:
+          type: string
         sha256:
           type: string
         status:
           type: string
+        frozenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
     Document:
       type: object
       properties:
@@ -529,7 +578,33 @@ components:
           type: string
         versionNo:
           type: integer
+        storageUri:
+          type: string
         checksumSha256:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+        version:
+          type: string
+        dependencies:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/DependencyHealth'
+    DependencyHealth:
+      type: object
+      properties:
+        status:
+          type: string
+        detail:
           type: string
     Alert:
       type: object

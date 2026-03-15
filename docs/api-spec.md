@@ -20,6 +20,10 @@
 ### 2.1 Health
 - `GET /healthz`
 - 목적: 서비스 생존/의존성 확인
+- 현재 구현:
+  - `status`, `service`, `version`, `dependencies` 반환
+  - DB readiness는 실제 질의로 확인
+  - OpenSearch/MinIO/Redis는 TCP 기반 best-effort readiness 확인
 
 ### 2.2 Event Ingest
 - `POST /v1/events:ingest`
@@ -33,6 +37,7 @@
   - raw_artifact_id
   - normalized_event_count
   - checksum_sha256
+  - event_ids
 
 ### 2.3 Search Correlation
 - `POST /v1/search/correlate`
@@ -54,9 +59,11 @@
 - 목적: 사건 생성
 - 입력:
   - title
+  - summary
   - primary_ip
-  - seed_event_ids
+  - event_ids 또는 seed_event_ids
   - notes
+  - severity
 - 출력:
   - case_id
   - case_no
@@ -67,11 +74,13 @@
 - 목적: 사건 상세 조회
 - 출력:
   - case summary
+  - related events summary
   - timeline
   - attribution links
   - evidence list
   - documents
-  - audit summary
+- 현재 구현 메모:
+  - 외부 공인 IP 사건은 `displayName=성명불상`, `confidenceGrade=D`, `nextStep=통신사/플랫폼/수사기관 조회 필요`
 
 ### 2.6 Update Case
 - `PATCH /v1/cases/{caseId}`
@@ -84,6 +93,11 @@
   - bundle_id
   - frozen_evidence_count
   - manifest_checksum
+  - status
+- 현재 구현:
+  - linked event/raw artifact reference를 snapshot하여 manifest JSON 생성
+  - SHA-256 checksum 계산 후 `documents`에 `evidence_manifest` / `DRAFT`로 기록
+  - audit log append 수행
 
 ### 2.8 Generate Document
 - `POST /v1/cases/{caseId}/documents`
