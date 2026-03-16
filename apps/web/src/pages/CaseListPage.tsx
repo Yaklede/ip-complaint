@@ -1,6 +1,7 @@
 import type { CaseSummary, HealthResponse } from "@incident-attribution/contracts";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { CorrelationWorkspace } from "../components/CorrelationWorkspace";
 import { apiClient } from "../shared/api";
 
 export function CaseListPage() {
@@ -45,9 +46,12 @@ export function CaseListPage() {
           </span>
         </div>
         <p className="muted">
-          Phase 1에서는 사건 목록과 상세 placeholder를 제공하며, 검색/상관분석 심화 기능은 후속 단계입니다.
+          Phase 1에서는 사건 목록과 상세 화면에 더해 기본 상관분석 검색을 제공합니다. 결과는 모두
+          draft/review 전제의 참고 정보입니다.
         </p>
       </section>
+
+      <CorrelationWorkspace />
 
       <section className="panel">
         <div className="panel-heading">

@@ -2,6 +2,8 @@ import type {
   CaseDetail,
   CaseListResponse,
   CaseSummary,
+  CorrelateRequest,
+  CorrelateResponse,
   HealthResponse,
   UpdateCaseRequest,
 } from "@incident-attribution/contracts";
@@ -29,6 +31,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const apiClient = {
   getHealth: () => request<HealthResponse>("/healthz"),
   listCases: () => request<CaseListResponse>("/v1/cases"),
+  correlate: (payload: CorrelateRequest) =>
+    request<CorrelateResponse>("/v1/search/correlate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getCase: (caseId: string) => request<CaseDetail>(`/v1/cases/${caseId}`),
   updateCase: (caseId: string, payload: UpdateCaseRequest) =>
     request<CaseSummary>(`/v1/cases/${caseId}`, {
