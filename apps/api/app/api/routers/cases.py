@@ -12,6 +12,7 @@ from app.schemas.cases import (
     CaseListResponse,
     CaseResponse,
     CreateCaseRequest,
+    ExportResponse,
     FreezeResponse,
     UpdateCaseRequest,
 )
@@ -93,3 +94,16 @@ def freeze_case(
     principal: RequestPrincipal = Depends(require_roles("investigator", "lead", "admin")),
 ) -> FreezeResponse:
     return EvidenceService(session).freeze_case(case_id, principal)
+
+
+@router.post(
+    "/cases/{case_id}/export",
+    response_model=ExportResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def prepare_case_export(
+    case_id: UUID,
+    session: Session = Depends(get_db_session),
+    principal: RequestPrincipal = Depends(require_roles("investigator", "lead", "admin")),
+) -> ExportResponse:
+    return EvidenceService(session).prepare_export_bundle(case_id, principal)

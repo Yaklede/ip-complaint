@@ -10,9 +10,13 @@ from app.core.auth import RequestPrincipal
 from app.core.errors import ApiException
 from app.models.entities import AttributionLink, Case, CaseEvent, Document, Evidence, NormalizedEvent
 from app.models.enums import DocumentStatus, EvidenceStatus
-from app.schemas.cases import FreezeResponse
+from app.schemas.cases import ExportResponse, FreezeResponse
 from app.services.audit import AuditLogService
-from app.services.manifest import build_case_manifest, compute_sha256_for_json
+from app.services.manifest import (
+    build_case_manifest,
+    build_export_bundle_metadata,
+    compute_sha256_for_json,
+)
 
 
 def utcnow() -> datetime:
@@ -25,29 +29,7 @@ class EvidenceService:
         self._audit = AuditLogService(session)
 
     def freeze_case(self, case_id: UUID, principal: RequestPrincipal) -> FreezeResponse:
-        case = self._session.get(Case, case_id)
-        if case is None:
-            raise ApiException(status_code=404, code="CASE_NOT_FOUND", message="Case not found")
-
-        events = self._session.scalars(
-            select(NormalizedEvent)
-            .join(CaseEvent, CaseEvent.event_id == NormalizedEvent.id)
-            .where(CaseEvent.case_id == case_id)
-            .options(
-                selectinload(NormalizedEvent.source),
-                selectinload(NormalizedEvent.raw_artifact),
-            )
-            .order_by(NormalizedEvent.event_time.asc())
-        ).all()
-        attribution_links = self._session.scalars(
-            select(AttributionLink)
-            .where(AttributionLink.case_id == case_id)
-            .options(selectinload(AttributionLink.user), selectinload(AttributionLink.account))
-            .order_by(AttributionLink.created_at.asc())
-        ).all()
-        existing_evidence = self._session.scalars(
-            select(Evidence).where(Evidence.case_id == case_id).order_by(Evidence.created_at.asc())
-        ).all()
+        case, events, attribution_links, existing_evidence, documents = self._load_case_context(case_id)
         evidence_by_event = {
             item.normalized_event_id: item for item in existing_evidence if item.normalized_event_id is not None
         }
@@ -93,10 +75,6 @@ class EvidenceService:
             evidence.frozen_at = frozen_at
 
         self._session.flush()
-
-        documents = self._session.scalars(
-            select(Document).where(Document.case_id == case_id).order_by(Document.generated_at.desc())
-        ).all()
         manifest = build_case_manifest(
             case=case,
             events=events,
@@ -147,3 +125,97 @@ class EvidenceService:
             manifest_checksum=manifest_checksum,
             status="completed",
         )
+
+    def prepare_export_bundle(self, case_id: UUID, principal: RequestPrincipal) -> ExportResponse:
+        case, events, _, evidence, documents = self._load_case_context(case_id)
+        exportable_evidence = [item for item in evidence if item.frozen_at is not None]
+        if not exportable_evidence:
+            raise ApiException(
+                status_code=409,
+                code="CASE_NOT_FROZEN",
+                message="Case must be frozen before export metadata can be prepared",
+            )
+
+        generated_at = utcnow()
+        export_metadata = build_export_bundle_metadata(
+            case=case,
+            events=events,
+            evidence=exportable_evidence,
+            documents=documents,
+            generated_at=generated_at,
+        )
+        manifest_checksum = compute_sha256_for_json(export_metadata)
+        next_version = int(
+            self._session.scalar(
+                select(func.max(Document.version_no)).where(
+                    Document.case_id == case_id,
+                    Document.doc_type == "export_bundle",
+                )
+            )
+            or 0
+        ) + 1
+        document = Document(
+            case_id=case_id,
+            doc_type="export_bundle",
+            status=DocumentStatus.DRAFT,
+            version_no=next_version,
+            storage_uri=f"export://cases/{case.case_no}/bundle-v{next_version}.json",
+            checksum_sha256=manifest_checksum,
+            generated_from_json=export_metadata,
+            generated_at=generated_at,
+        )
+        self._session.add(document)
+        self._session.flush()
+
+        self._audit.append(
+            actor=principal.actor,
+            action="cases.export.prepare",
+            entity_type="case",
+            entity_id=case.id,
+            after={
+                "caseNo": case.case_no,
+                "bundleId": str(document.id),
+                "exportedEvidenceCount": len(exportable_evidence),
+                "manifestChecksum": manifest_checksum,
+            },
+        )
+        self._session.commit()
+
+        return ExportResponse(
+            bundle_id=document.id,
+            exported_evidence_count=len(exportable_evidence),
+            manifest_checksum=manifest_checksum,
+            status="prepared",
+        )
+
+    def _load_case_context(
+        self,
+        case_id: UUID,
+    ) -> tuple[Case, list[NormalizedEvent], list[AttributionLink], list[Evidence], list[Document]]:
+        case = self._session.get(Case, case_id)
+        if case is None:
+            raise ApiException(status_code=404, code="CASE_NOT_FOUND", message="Case not found")
+
+        events = self._session.scalars(
+            select(NormalizedEvent)
+            .join(CaseEvent, CaseEvent.event_id == NormalizedEvent.id)
+            .where(CaseEvent.case_id == case_id)
+            .options(
+                selectinload(NormalizedEvent.source),
+                selectinload(NormalizedEvent.raw_artifact),
+            )
+            .order_by(NormalizedEvent.event_time.asc())
+        ).all()
+        attribution_links = self._session.scalars(
+            select(AttributionLink)
+            .where(AttributionLink.case_id == case_id)
+            .options(selectinload(AttributionLink.user), selectinload(AttributionLink.account))
+            .order_by(AttributionLink.created_at.asc())
+        ).all()
+        evidence = self._session.scalars(
+            select(Evidence).where(Evidence.case_id == case_id).order_by(Evidence.created_at.asc())
+        ).all()
+        documents = self._session.scalars(
+            select(Document).where(Document.case_id == case_id).order_by(Document.generated_at.desc())
+        ).all()
+        return case, events, attribution_links, evidence, documents

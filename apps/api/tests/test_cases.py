@@ -179,3 +179,47 @@ def test_post_freeze_creates_manifest_evidence_and_audit_log(
     )
     assert audit_entry is not None
     assert audit_entry.entity_type == "case"
+
+
+def test_post_export_prepares_metadata_bundle_and_audit_log(
+    client: TestClient, db_session: Session, sample_event_payload: list[dict[str, object]]
+) -> None:
+    event_id = _ingest_seed_event(client, sample_event_payload)
+    create_response = client.post(
+        "/v1/cases",
+        json={
+            "title": "export 동작 검증",
+            "eventIds": [event_id],
+        },
+    )
+    case_id = create_response.json()["id"]
+
+    freeze_response = client.post(f"/v1/cases/{case_id}/freeze")
+    assert freeze_response.status_code == 202
+
+    response = client.post(f"/v1/cases/{case_id}/export")
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["status"] == "prepared"
+    assert body["exportedEvidenceCount"] == 2
+
+    document = db_session.scalar(
+        select(Document)
+        .where(Document.case_id == UUID(case_id), Document.doc_type == "export_bundle")
+        .order_by(Document.generated_at.desc())
+    )
+    assert document is not None
+    assert document.status.value == "DRAFT"
+    assert document.checksum_sha256 == body["manifestChecksum"]
+    assert document.generated_from_json["bundle_state"] == "DRAFT"
+    assert document.generated_from_json["package_plan"]["bundle_format"] == "metadata-only"
+    assert len(document.generated_from_json["input_snapshot"]["evidence"]) == 2
+
+    audit_entry = db_session.scalar(
+        select(AuditLog)
+        .where(AuditLog.action == "cases.export.prepare")
+        .order_by(AuditLog.created_at.desc())
+    )
+    assert audit_entry is not None
+    assert audit_entry.entity_type == "case"

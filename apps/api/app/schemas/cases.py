@@ -117,3 +117,10 @@ class FreezeResponse(CamelModel):
     frozen_evidence_count: int
     manifest_checksum: str
     status: str
+
+
+class ExportResponse(CamelModel):
+    bundle_id: UUID
+    exported_evidence_count: int
+    manifest_checksum: str
+    status: str

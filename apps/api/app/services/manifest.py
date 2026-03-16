@@ -96,3 +96,77 @@ def build_case_manifest(
         ],
     }
     return make_json_safe(manifest)
+
+
+def build_export_bundle_metadata(
+    *,
+    case: Case,
+    events: list[NormalizedEvent],
+    evidence: list[Evidence],
+    documents: list[Document],
+    generated_at: datetime,
+) -> dict[str, Any]:
+    payload = {
+        "generated_at": generated_at,
+        "bundle_state": "DRAFT",
+        "case": {
+            "id": case.id,
+            "case_no": case.case_no,
+            "title": case.title,
+            "status": case.status,
+            "severity": case.severity,
+            "primary_ip": case.primary_ip,
+        },
+        "input_snapshot": {
+            "events": [
+                {
+                    "id": event.id,
+                    "event_time": event.event_time,
+                    "event_type": event.event_type,
+                    "src_ip": event.src_ip,
+                    "dst_ip": event.dst_ip,
+                    "hostname": event.hostname,
+                    "username": event.username,
+                    "session_id": event.session_id,
+                    "request_host": event.request_host,
+                    "request_path": event.request_path,
+                    "raw_artifact_id": event.raw_artifact_id,
+                    "checksum_sha256": event.checksum_sha256,
+                }
+                for event in events
+            ],
+            "evidence": [
+                {
+                    "id": item.id,
+                    "evidence_type": item.evidence_type,
+                    "raw_artifact_id": item.raw_artifact_id,
+                    "normalized_event_id": item.normalized_event_id,
+                    "object_uri": item.object_uri,
+                    "sha256": item.sha256,
+                    "status": item.status,
+                    "frozen_at": item.frozen_at,
+                }
+                for item in evidence
+            ],
+            "documents": [
+                {
+                    "id": document.id,
+                    "doc_type": document.doc_type,
+                    "status": document.status,
+                    "version_no": document.version_no,
+                    "storage_uri": document.storage_uri,
+                    "checksum_sha256": document.checksum_sha256,
+                    "generated_at": document.generated_at,
+                }
+                for document in documents
+            ],
+        },
+        "package_plan": {
+            "bundle_format": "metadata-only",
+            "final_legal_filing_generated": False,
+            "requires_review": True,
+            "evidence_count": len(evidence),
+            "document_count": len(documents),
+        },
+    }
+    return make_json_safe(payload)

@@ -168,6 +168,13 @@ export interface FreezeResponse {
   status: string;
 }
 
+export interface ExportResponse {
+  bundleId: string;
+  exportedEvidenceCount: number;
+  manifestChecksum: string;
+  status: string;
+}
+
 export interface CorrelateRequest {
   queryType: CorrelateQueryType;
   queryValue: string;
