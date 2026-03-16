@@ -1,7 +1,7 @@
 ## Task Tracker
 
 ### Context
-- Date: 2026-03-15
+- Date: 2026-03-16
 - Workspace: `/Users/jimin/Desktop/study/ip-complaint`
 - Repo note: `AGENTS.md` is now present and is the active instruction file.
 
@@ -35,18 +35,19 @@
 - Completed: Added frontend shell, shared contracts, env examples, and local runtime wiring.
 - Completed: Verified `pytest apps/api/tests` (8 passed).
 - Completed: Verified `npm run build --workspace @incident-attribution/web`.
-- In progress: Split current work into logical commits and finalize status docs.
+- Completed: Split work into logical commits and updated repo guidance.
+- Current repo state: clean working tree.
 
 ### Remaining Work
-- [x] Inspect existing `infra/docker-compose.yml` and repository constraints.
-- [x] Create monorepo scaffold: `apps/api`, `apps/web`, `packages/contracts`, `infra`.
-- [x] Implement FastAPI app bootstrap, config, db session, models, migration, services, and endpoints.
-- [x] Implement minimal React + TypeScript web shell.
-- [x] Implement shared contracts package.
-- [x] Update docker compose for local dependencies and app services.
-- [x] Add pytest coverage for required endpoints/services/guardrails.
-- [x] Update documentation and README with run/test/env/limitations.
-- [ ] Commit completed work in logical units.
+- [ ] Wire real Postgres/OpenSearch/MinIO persistence paths instead of metadata/readiness-only integration.
+- [ ] Implement raw artifact upload/storage adapter and source-specific parser interface.
+- [ ] Add missing case update flow and richer case management UI/actions.
+- [ ] Add correlate/search APIs and candidate asset/user cards.
+- [ ] Add evidence list UI details, export metadata flow, and export packaging.
+- [ ] Implement attribution engine inputs and A/B/C/D scoring rules.
+- [ ] Implement document generation templates, review API, and document list/download UI.
+- [ ] Add masking utilities, approval workflow, retention settings, and admin surfaces.
+- [ ] Add alerts/rules/dashboard work after the above.
 
 ### Compact Resume Notes
 - Re-read before resuming if context is compacted:
@@ -60,4 +61,4 @@
   - `docs/openapi.yaml`
   - `docs/schema.sql`
 - Immediate next step:
-  - Update backlog/tracker status one more time and create logical git commits.
+  - Start with raw artifact storage/parser abstraction plus real dependency integration.
