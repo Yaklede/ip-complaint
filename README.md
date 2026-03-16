@@ -94,10 +94,11 @@ pytest apps/api/tests
 - `PATCH /v1/cases/{caseId}`
 - `GET /v1/cases/{caseId}`
 - `POST /v1/cases/{caseId}/freeze`
+- `POST /v1/cases/{caseId}/export`
 - SQLAlchemy 모델과 Alembic 초기 마이그레이션
 - raw artifact filesystem/MinIO storage abstraction과 parser registry
-- 이벤트 ingest, 상관분석, 케이스 생성/조회/수정, evidence freeze, manifest SHA-256, audit log append 서비스
-- React app shell, 사건 목록/상세 화면, 상관분석 검색 워크플로우, draft 경고 배너
+- 이벤트 ingest, 상관분석, 케이스 생성/조회/수정, evidence freeze/export metadata, manifest SHA-256, audit log append 서비스
+- React app shell, 사건 목록/상세 화면, 상관분석 검색 워크플로우, export draft bundle 훅, draft 경고 배너
 
 ## Stubbed Or Deferred
 
@@ -106,13 +107,13 @@ pytest apps/api/tests
 - Redis background jobs
 - 내부 귀속 엔진(A/B/C 계산, DHCP/VPN/AD/EDR/CMDB 매핑)
 - 문서 템플릿 렌더링과 승인 워크플로우
-- alerts/rules, export bundle ZIP, path-level correlation UI
+- alerts/rules, export bundle ZIP payload generation, path-level correlation UI
 
 ## Known Limitations
 
 - Phase 1 ingest는 raw artifact를 filesystem 또는 MinIO에 immutable-style로 저장하지만, OpenSearch 색인은 아직 연결하지 않았습니다.
 - correlate API는 현재 DB 직접 조회 기반이며 path 단위 검색과 dedicated search index는 아직 없습니다.
-- freeze는 manifest JSON snapshot과 document metadata를 DB에 기록하지만 외부 제출용 최종 문서는 생성하지 않습니다.
+- freeze/export는 metadata snapshot과 checksum을 DB에 기록하지만 외부 제출용 최종 문서나 ZIP payload는 생성하지 않습니다.
 - RBAC는 header 기반 placeholder middleware이며 실제 OIDC/SAML 연동은 후속 단계입니다.
-- 웹 UI는 목록/상세/상관분석 조회 중심이며 사건 생성, freeze, export 액션은 아직 없습니다.
+- 웹 UI는 목록/상세/상관분석 조회와 export 준비 훅 중심이며 사건 생성, freeze, 실제 bundle 다운로드는 아직 없습니다.
 - Docker Compose의 `api`/`web` 서비스는 컨테이너 시작 시 의존성을 설치하므로 초기 기동 시간이 길 수 있습니다.

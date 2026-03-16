@@ -38,7 +38,7 @@
 - [x] freeze case endpoint
 - [x] manifest JSON 생성
 - [ ] evidence list UI
-- [ ] export metadata
+- [x] export metadata
 - [x] checksum validation
 
 ## Epic 6. Attribution Engine

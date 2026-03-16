@@ -173,6 +173,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FreezeResponse'
+  /v1/cases/{caseId}/export:
+    post:
+      tags: [cases]
+      summary: Prepare export bundle metadata for a frozen case
+      parameters:
+        - in: path
+          name: caseId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Export metadata prepared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
   /v1/cases/{caseId}/documents:
     post:
       tags: [documents]
@@ -381,6 +399,19 @@ components:
         status:
           type: string
           example: completed
+    ExportResponse:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          format: uuid
+        exportedEvidenceCount:
+          type: integer
+        manifestChecksum:
+          type: string
+        status:
+          type: string
+          example: prepared
     GenerateDocumentRequest:
       type: object
       required: [docType, templateVersion]

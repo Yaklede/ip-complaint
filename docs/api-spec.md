@@ -129,6 +129,20 @@
 - `GET /v1/alerts`
 - `POST /v1/alerts/{alertId}/promote`
 
+### 2.11 Prepare Export Bundle
+- `POST /v1/cases/{caseId}/export`
+- 목적: freeze된 증거 기준으로 export bundle metadata를 생성
+- 출력:
+  - bundle_id
+  - exported_evidence_count
+  - manifest_checksum
+  - status
+- 현재 구현:
+  - 실제 ZIP이나 최종 법률 문서는 생성하지 않음
+  - input snapshot, evidence/document references, package plan을 `DRAFT` metadata로 저장
+  - freeze 이전 사건에는 `409 CASE_NOT_FROZEN` 반환
+  - audit log append 수행
+
 ## 3. 에러 모델
 
 모든 에러는 아래 구조를 따른다.
