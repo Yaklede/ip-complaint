@@ -85,6 +85,9 @@
 ### 2.6 Update Case
 - `PATCH /v1/cases/{caseId}`
 - 목적: 상태/담당자/심각도/태그 갱신
+- 현재 구현:
+  - `title`, `summary`, `status`, `severity`, `assignee` 수정 가능
+  - 변경 전/후 상태를 audit log에 기록
 
 ### 2.7 Freeze Evidence
 - `POST /v1/cases/{caseId}/freeze`

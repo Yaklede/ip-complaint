@@ -356,6 +356,8 @@ components:
       properties:
         title:
           type: string
+        summary:
+          type: string
         status:
           type: string
           enum: [NEW, TRIAGED, INVESTIGATING, READY_FOR_REVIEW, READY_FOR_EXPORT, CLOSED, REJECTED]
@@ -364,10 +366,6 @@ components:
           enum: [low, medium, high, critical]
         assignee:
           type: string
-        tags:
-          type: array
-          items:
-            type: string
     FreezeResponse:
       type: object
       properties:
@@ -421,6 +419,8 @@ components:
         externalActorLabel:
           type: string
         summary:
+          type: string
+        assignee:
           type: string
         openedAt:
           type: string

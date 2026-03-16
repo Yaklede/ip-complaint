@@ -26,6 +26,14 @@ class CreateCaseRequest(CamelModel):
     severity: str | None = None
 
 
+class UpdateCaseRequest(CamelModel):
+    title: str | None = None
+    summary: str | None = None
+    status: CaseStatus | None = None
+    severity: str | None = None
+    assignee: str | None = None
+
+
 class CaseResponse(CamelModel):
     id: UUID
     case_no: str
@@ -36,6 +44,7 @@ class CaseResponse(CamelModel):
     confidence_grade: str | None = None
     external_actor_label: str | None = None
     summary: str | None = None
+    assignee: str | None = None
     opened_at: datetime
 
 

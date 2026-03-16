@@ -45,10 +45,13 @@
   - parser registry added with `nginx`, `waf`, `vpn` parser slots
   - ingest path now writes immutable-style raw artifact content and stores storage metadata
   - verified `pytest apps/api/tests` after ingest changes
+- Completed next batch:
+  - `PATCH /v1/cases/{caseId}` added with audit logging
+  - case detail UI now supports minimal status/severity/assignee/summary edits
+  - verified `pytest apps/api/tests` (9 passed) and frontend build after case update changes
 
 ### Remaining Work
 - [ ] Wire real Postgres/OpenSearch/MinIO persistence paths instead of metadata/readiness-only integration.
-- [ ] Add missing case update flow and richer case management UI/actions.
 - [ ] Add correlate/search APIs and candidate asset/user cards.
 - [ ] Add evidence list UI details, export metadata flow, and export packaging.
 - [ ] Implement attribution engine inputs and A/B/C/D scoring rules.
@@ -68,4 +71,4 @@
   - `docs/openapi.yaml`
   - `docs/schema.sql`
 - Immediate next step:
-  - Implement case update flow in API first, then expose minimal UI actions.
+  - Implement correlate/search API and the first candidate asset/user summary responses.

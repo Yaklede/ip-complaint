@@ -1,12 +1,29 @@
-import type { CaseDetail } from "@incident-attribution/contracts";
+import type { CaseDetail, CaseStatus, UpdateCaseRequest } from "@incident-attribution/contracts";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiClient } from "../shared/api";
+
+const CASE_STATUSES: CaseStatus[] = [
+  "NEW",
+  "TRIAGED",
+  "INVESTIGATING",
+  "READY_FOR_REVIEW",
+  "READY_FOR_EXPORT",
+  "CLOSED",
+  "REJECTED",
+];
 
 export function CaseDetailPage() {
   const { caseId } = useParams();
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [updateForm, setUpdateForm] = useState<UpdateCaseRequest>({
+    status: "NEW",
+    severity: "medium",
+    assignee: "",
+    summary: "",
+  });
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
   useEffect(() => {
     if (!caseId) {
@@ -33,6 +50,19 @@ export function CaseDetailPage() {
       cancelled = true;
     };
   }, [caseId]);
+
+  useEffect(() => {
+    if (!caseDetail) {
+      return;
+    }
+
+    setUpdateForm({
+      status: caseDetail.status,
+      severity: caseDetail.severity,
+      assignee: caseDetail.assignee ?? "",
+      summary: caseDetail.summary ?? "",
+    });
+  }, [caseDetail]);
 
   if (!caseId) {
     return <p className="error-text">caseId가 없습니다.</p>;
@@ -94,7 +124,92 @@ export function CaseDetailPage() {
             <dt>Events</dt>
             <dd>{caseDetail.relatedEventsSummary.totalCount}</dd>
           </div>
+          <div>
+            <dt>Assignee</dt>
+            <dd>{caseDetail.assignee ?? "-"}</dd>
+          </div>
         </dl>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <h2>Case Actions</h2>
+          <span className="count-pill">{saveState === "saved" ? "saved" : "editable"}</span>
+        </div>
+        <form
+          className="case-form"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            setSaveState("saving");
+            setError(null);
+            try {
+              await apiClient.updateCase(caseId, updateForm);
+              const refreshed = await apiClient.getCase(caseId);
+              setCaseDetail(refreshed);
+              setSaveState("saved");
+            } catch (saveError) {
+              setError(saveError instanceof Error ? saveError.message : "Unknown error");
+              setSaveState("idle");
+            }
+          }}
+        >
+          <label>
+            <span>Status</span>
+            <select
+              value={updateForm.status}
+              onChange={(event) =>
+                setUpdateForm((current) => ({ ...current, status: event.target.value as CaseStatus }))
+              }
+            >
+              {CASE_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>Severity</span>
+            <select
+              value={updateForm.severity}
+              onChange={(event) =>
+                setUpdateForm((current) => ({ ...current, severity: event.target.value }))
+              }
+            >
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+              <option value="critical">critical</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Assignee</span>
+            <input
+              value={updateForm.assignee ?? ""}
+              onChange={(event) =>
+                setUpdateForm((current) => ({ ...current, assignee: event.target.value }))
+              }
+              placeholder="team-or-owner"
+            />
+          </label>
+
+          <label className="full-width">
+            <span>Summary</span>
+            <textarea
+              value={updateForm.summary ?? ""}
+              onChange={(event) =>
+                setUpdateForm((current) => ({ ...current, summary: event.target.value }))
+              }
+              rows={4}
+            />
+          </label>
+
+          <button className="primary-button" type="submit" disabled={saveState === "saving"}>
+            {saveState === "saving" ? "Saving..." : "Save Case"}
+          </button>
+        </form>
       </section>
 
       <section className="panel">

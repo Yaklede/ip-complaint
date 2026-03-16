@@ -100,6 +100,46 @@ def test_get_case_returns_summary_related_events_and_links(
     assert body["documents"] == []
 
 
+def test_patch_case_updates_fields_and_writes_audit_log(
+    client: TestClient, db_session: Session, sample_event_payload: list[dict[str, object]]
+) -> None:
+    event_id = _ingest_seed_event(client, sample_event_payload)
+    create_response = client.post(
+        "/v1/cases",
+        json={
+            "title": "수정 전 사건",
+            "eventIds": [event_id],
+        },
+    )
+    case_id = create_response.json()["id"]
+
+    response = client.patch(
+        f"/v1/cases/{case_id}",
+        json={
+            "title": "수정 후 사건",
+            "summary": "조사 메모를 포함한 수정 요약",
+            "status": "INVESTIGATING",
+            "severity": "high",
+            "assignee": "ir-team",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == "수정 후 사건"
+    assert body["summary"] == "조사 메모를 포함한 수정 요약"
+    assert body["status"] == "INVESTIGATING"
+    assert body["severity"] == "high"
+    assert body["assignee"] == "ir-team"
+
+    audit_entry = db_session.scalar(
+        select(AuditLog).where(AuditLog.action == "cases.update").order_by(AuditLog.created_at.desc())
+    )
+    assert audit_entry is not None
+    assert audit_entry.before_json["title"] == "수정 전 사건"
+    assert audit_entry.after_json["title"] == "수정 후 사건"
+
+
 def test_post_freeze_creates_manifest_evidence_and_audit_log(
     client: TestClient, db_session: Session, sample_event_payload: list[dict[str, object]]
 ) -> None:

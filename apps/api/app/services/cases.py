@@ -26,6 +26,7 @@ from app.schemas.cases import (
     DocumentResponse,
     EvidenceResponse,
     RelatedEventsSummary,
+    UpdateCaseRequest,
 )
 from app.schemas.events import NormalizedEventResponse
 from app.services.audit import AuditLogService
@@ -152,6 +153,34 @@ class CaseService:
             evidence=[EvidenceResponse.model_validate(item) for item in evidence],
             documents=[DocumentResponse.model_validate(item) for item in documents],
         )
+
+    def update_case(
+        self, case_id: UUID, payload: UpdateCaseRequest, principal: RequestPrincipal
+    ) -> CaseResponse:
+        case = self._session.get(Case, case_id)
+        if case is None:
+            raise ApiException(status_code=404, code="CASE_NOT_FOUND", message="Case not found")
+
+        before = CaseResponse.model_validate(case).model_dump(mode="json")
+        updates = payload.model_dump(exclude_unset=True)
+        if not updates:
+            return CaseResponse.model_validate(case)
+
+        for field_name, value in updates.items():
+            setattr(case, field_name, value)
+
+        self._session.flush()
+        self._audit.append(
+            actor=principal.actor,
+            action="cases.update",
+            entity_type="case",
+            entity_id=case.id,
+            before=before,
+            after=CaseResponse.model_validate(case).model_dump(mode="json"),
+        )
+        self._session.commit()
+        self._session.refresh(case)
+        return CaseResponse.model_validate(case)
 
     def _load_events(self, event_ids: list[UUID]) -> list[NormalizedEvent]:
         if not event_ids:

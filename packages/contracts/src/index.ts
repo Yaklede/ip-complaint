@@ -83,6 +83,14 @@ export interface CreateCaseRequest {
   severity?: string;
 }
 
+export interface UpdateCaseRequest {
+  title?: string;
+  summary?: string;
+  status?: CaseStatus;
+  severity?: string;
+  assignee?: string;
+}
+
 export interface CaseSummary {
   id: string;
   caseNo: string;
@@ -93,6 +101,7 @@ export interface CaseSummary {
   confidenceGrade?: string | null;
   externalActorLabel?: string | null;
   summary?: string | null;
+  assignee?: string | null;
   openedAt: string;
 }
 

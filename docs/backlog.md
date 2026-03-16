@@ -18,7 +18,7 @@
 
 ## Epic 3. Case Management
 - [x] case schema/model/service
-- [ ] case create/get/update API
+- [x] case create/get/update API
 - [x] case list/filter API
 - [x] UI case list page
 - [x] UI case detail page

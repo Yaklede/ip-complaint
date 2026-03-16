@@ -13,6 +13,7 @@ from app.schemas.cases import (
     CaseResponse,
     CreateCaseRequest,
     FreezeResponse,
+    UpdateCaseRequest,
 )
 from app.services.cases import CaseService
 from app.services.evidence import EvidenceService
@@ -69,6 +70,16 @@ def get_case(
     ),
 ) -> CaseDetailResponse:
     return CaseService(session).get_case(case_id)
+
+
+@router.patch("/cases/{case_id}", response_model=CaseResponse)
+def update_case(
+    case_id: UUID,
+    payload: UpdateCaseRequest,
+    session: Session = Depends(get_db_session),
+    principal: RequestPrincipal = Depends(require_roles("investigator", "lead", "admin")),
+) -> CaseResponse:
+    return CaseService(session).update_case(case_id, payload, principal)
 
 
 @router.post(
