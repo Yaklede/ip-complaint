@@ -97,7 +97,7 @@ pytest apps/api/tests
 - SQLAlchemy 모델과 Alembic 초기 마이그레이션
 - raw artifact filesystem/MinIO storage abstraction과 parser registry
 - 이벤트 ingest, 상관분석, 케이스 생성/조회/수정, evidence freeze, manifest SHA-256, audit log append 서비스
-- 최소 React app shell, 사건 목록 placeholder, 사건 상세 placeholder, draft 경고 배너
+- React app shell, 사건 목록/상세 화면, 상관분석 검색 워크플로우, draft 경고 배너
 
 ## Stubbed Or Deferred
 
@@ -114,5 +114,5 @@ pytest apps/api/tests
 - correlate API는 현재 DB 직접 조회 기반이며 path 단위 검색과 dedicated search index는 아직 없습니다.
 - freeze는 manifest JSON snapshot과 document metadata를 DB에 기록하지만 외부 제출용 최종 문서는 생성하지 않습니다.
 - RBAC는 header 기반 placeholder middleware이며 실제 OIDC/SAML 연동은 후속 단계입니다.
-- 웹 UI는 placeholder 중심이며 사건 생성/수정 폼은 아직 없습니다.
+- 웹 UI는 목록/상세/상관분석 조회 중심이며 사건 생성, freeze, export 액션은 아직 없습니다.
 - Docker Compose의 `api`/`web` 서비스는 컨테이너 시작 시 의존성을 설치하므로 초기 기동 시간이 길 수 있습니다.

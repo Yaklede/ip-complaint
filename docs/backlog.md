@@ -32,6 +32,7 @@
 - [x] domain search
 - [ ] path search
 - [x] candidate asset/user cards
+- [x] UI correlation workflow
 
 ## Epic 5. Evidence Vault
 - [x] freeze case endpoint

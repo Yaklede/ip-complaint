@@ -50,14 +50,17 @@
   - candidate asset/user summary responses added with conservative attribution preview
   - external public IP search preserves `EXTERNAL_UNKNOWN` / `성명불상` / `D`
   - verified `pytest apps/api/tests` (11 passed) after search changes
+- Completed batch:
+  - case list page now includes correlation search workflow wired to `POST /v1/search/correlate`
+  - related cases, candidate assets/users, and attribution preview are visible in the web UI
+  - verified `npm run build --workspace @incident-attribution/web` and `pytest apps/api/tests`
 - Current batch:
-  1. correlation results UI wiring
-  2. evidence export metadata flow
-  3. export packaging groundwork
+  1. evidence export metadata flow
+  2. export packaging groundwork
+  3. evidence list UI detail expansion
 
 ### Remaining Work
 - [ ] Wire real Postgres/OpenSearch/MinIO persistence paths instead of metadata/readiness-only integration.
-- [ ] Add correlation results UI and search workflow in the web app.
 - [ ] Add evidence list UI details, export metadata flow, and export packaging.
 - [ ] Implement attribution engine inputs and A/B/C/D scoring rules.
 - [ ] Implement document generation templates, review API, and document list/download UI.
@@ -76,4 +79,4 @@
   - `docs/openapi.yaml`
   - `docs/schema.sql`
 - Immediate next step:
-  - Implement correlation results UI wiring, then move to export metadata and packaging.
+  - Implement evidence export metadata flow and the first packaging groundwork.
