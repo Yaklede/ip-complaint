@@ -4,6 +4,7 @@ import type {
   CaseSummary,
   CorrelateRequest,
   CorrelateResponse,
+  ExportResponse,
   HealthResponse,
   UpdateCaseRequest,
 } from "@incident-attribution/contracts";
@@ -37,6 +38,10 @@ export const apiClient = {
       body: JSON.stringify(payload),
     }),
   getCase: (caseId: string) => request<CaseDetail>(`/v1/cases/${caseId}`),
+  prepareExport: (caseId: string) =>
+    request<ExportResponse>(`/v1/cases/${caseId}/export`, {
+      method: "POST",
+    }),
   updateCase: (caseId: string, payload: UpdateCaseRequest) =>
     request<CaseSummary>(`/v1/cases/${caseId}`, {
       method: "PATCH",

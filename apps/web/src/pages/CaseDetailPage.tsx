@@ -24,6 +24,7 @@ export function CaseDetailPage() {
     summary: "",
   });
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [exportState, setExportState] = useState<"idle" | "preparing" | "prepared">("idle");
 
   useEffect(() => {
     if (!caseId) {
@@ -256,6 +257,26 @@ export function CaseDetailPage() {
         <div>
           <div className="panel-heading">
             <h2>Documents</h2>
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={exportState === "preparing"}
+              onClick={async () => {
+                setExportState("preparing");
+                setError(null);
+                try {
+                  await apiClient.prepareExport(caseId);
+                  const refreshed = await apiClient.getCase(caseId);
+                  setCaseDetail(refreshed);
+                  setExportState("prepared");
+                } catch (exportError) {
+                  setError(exportError instanceof Error ? exportError.message : "Unknown error");
+                  setExportState("idle");
+                }
+              }}
+            >
+              {exportState === "preparing" ? "Preparing..." : "Prepare Export"}
+            </button>
           </div>
           {caseDetail.documents.length === 0 ? (
             <p className="muted">생성된 문서가 없습니다.</p>
@@ -268,6 +289,9 @@ export function CaseDetailPage() {
               ))}
             </ul>
           )}
+          <p className="muted">
+            export는 metadata-only draft bundle만 생성하며 최종 제출 문서는 만들지 않습니다.
+          </p>
         </div>
       </section>
 

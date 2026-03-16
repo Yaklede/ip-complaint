@@ -263,7 +263,24 @@ a {
   cursor: pointer;
 }
 
+.secondary-button {
+  width: fit-content;
+  border: 1px solid rgba(108, 82, 56, 0.18);
+  border-radius: 999px;
+  padding: 0.68rem 0.95rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: #5a3f23;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .primary-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.secondary-button:disabled {
   opacity: 0.6;
   cursor: progress;
 }
