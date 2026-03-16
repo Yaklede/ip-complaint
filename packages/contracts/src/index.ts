@@ -56,6 +56,8 @@ export interface IngestResponse {
   eventIds: string[];
 }
 
+export type CorrelateQueryType = "ip" | "username" | "hostname" | "session" | "domain";
+
 export interface NormalizedEvent {
   id: string;
   eventTime: string;
@@ -164,4 +166,49 @@ export interface FreezeResponse {
   frozenEvidenceCount: number;
   manifestChecksum: string;
   status: string;
+}
+
+export interface CorrelateRequest {
+  queryType: CorrelateQueryType;
+  queryValue: string;
+  timeFrom: string;
+  timeTo: string;
+}
+
+export interface CandidateAsset {
+  id: string;
+  assetTag: string;
+  hostname: string;
+  deviceType: string;
+  ownerDisplayName?: string | null;
+  primaryUserDisplayName?: string | null;
+  observedIps: string[];
+  matchedBy: string[];
+}
+
+export interface CandidateUser {
+  id: string;
+  username: string;
+  displayName: string;
+  email?: string | null;
+  department?: string | null;
+  matchedBy: string[];
+}
+
+export interface AttributionPreview {
+  actorType: ActorType;
+  displayName: string;
+  observedIp?: string | null;
+  confidenceScore: number;
+  confidenceGrade: string;
+  rationale?: string | null;
+  nextStep?: string | null;
+}
+
+export interface CorrelateResponse {
+  relatedEvents: NormalizedEvent[];
+  relatedCases: CaseSummary[];
+  candidateAssets: CandidateAsset[];
+  candidateUsers: CandidateUser[];
+  attributionPreview?: AttributionPreview | null;
 }
