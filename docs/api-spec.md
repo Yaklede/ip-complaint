@@ -53,6 +53,11 @@
   - candidate_assets
   - candidate_users
   - attribution_preview
+- 현재 구현:
+  - `ip`, `username`, `hostname`, `session`, `domain` 질의를 지원
+  - DB 기준으로 관련 이벤트/사건과 candidate asset/user summary를 반환
+  - 외부 공인 IP 질의는 항상 `EXTERNAL_UNKNOWN` / `성명불상` / `D` 등급으로 유지
+  - 내부 후보가 단일 사용자로 수렴한 경우에만 보수적 preview(`C`)를 반환
 
 ### 2.4 Create Case
 - `POST /v1/cases`

@@ -320,13 +320,15 @@ components:
         candidateAssets:
           type: array
           items:
-            $ref: '#/components/schemas/Asset'
+            $ref: '#/components/schemas/CandidateAsset'
         candidateUsers:
           type: array
           items:
-            $ref: '#/components/schemas/User'
+            $ref: '#/components/schemas/CandidateUser'
         attributionPreview:
-          $ref: '#/components/schemas/AttributionPreview'
+          anyOf:
+            - $ref: '#/components/schemas/AttributionPreview'
+            - type: 'null'
     CreateCaseRequest:
       type: object
       required: [title]
@@ -492,7 +494,7 @@ components:
           type: string
         statusCode:
           type: integer
-    Asset:
+    CandidateAsset:
       type: object
       properties:
         id:
@@ -502,11 +504,21 @@ components:
           type: string
         hostname:
           type: string
-        serialNumber:
-          type: string
         deviceType:
           type: string
-    User:
+        ownerDisplayName:
+          type: string
+        primaryUserDisplayName:
+          type: string
+        observedIps:
+          type: array
+          items:
+            type: string
+        matchedBy:
+          type: array
+          items:
+            type: string
+    CandidateUser:
       type: object
       properties:
         id:
@@ -520,6 +532,10 @@ components:
           type: string
         department:
           type: string
+        matchedBy:
+          type: array
+          items:
+            type: string
     AttributionPreview:
       type: object
       properties:

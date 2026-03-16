@@ -88,26 +88,30 @@ pytest apps/api/tests
 
 - `GET /healthz`
 - `POST /v1/events:ingest`
+- `POST /v1/search/correlate`
 - `GET /v1/cases`
 - `POST /v1/cases`
+- `PATCH /v1/cases/{caseId}`
 - `GET /v1/cases/{caseId}`
 - `POST /v1/cases/{caseId}/freeze`
 - SQLAlchemy 모델과 Alembic 초기 마이그레이션
-- 이벤트 ingest, 케이스 생성/조회, evidence freeze, manifest SHA-256, audit log append 서비스
+- raw artifact filesystem/MinIO storage abstraction과 parser registry
+- 이벤트 ingest, 상관분석, 케이스 생성/조회/수정, evidence freeze, manifest SHA-256, audit log append 서비스
 - 최소 React app shell, 사건 목록 placeholder, 사건 상세 placeholder, draft 경고 배너
 
 ## Stubbed Or Deferred
 
 - OpenSearch 기반 실제 색인/검색 고도화
-- MinIO object upload 및 immutable storage 연동
+- MinIO object lock 기반 immutable storage hardening
 - Redis background jobs
 - 내부 귀속 엔진(A/B/C 계산, DHCP/VPN/AD/EDR/CMDB 매핑)
 - 문서 템플릿 렌더링과 승인 워크플로우
-- correlate API, alerts/rules, export bundle ZIP
+- alerts/rules, export bundle ZIP, path-level correlation UI
 
 ## Known Limitations
 
 - Phase 1 ingest는 raw artifact를 filesystem 또는 MinIO에 immutable-style로 저장하지만, OpenSearch 색인은 아직 연결하지 않았습니다.
+- correlate API는 현재 DB 직접 조회 기반이며 path 단위 검색과 dedicated search index는 아직 없습니다.
 - freeze는 manifest JSON snapshot과 document metadata를 DB에 기록하지만 외부 제출용 최종 문서는 생성하지 않습니다.
 - RBAC는 header 기반 placeholder middleware이며 실제 OIDC/SAML 연동은 후속 단계입니다.
 - 웹 UI는 placeholder 중심이며 사건 생성/수정 폼은 아직 없습니다.

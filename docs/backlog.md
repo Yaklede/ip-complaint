@@ -24,12 +24,14 @@
 - [x] UI case detail page
 
 ## Epic 4. Search & Correlation
-- [ ] correlate API
-- [ ] IP search
-- [ ] username search
-- [ ] hostname search
-- [ ] domain/path search
-- [ ] candidate asset/user cards
+- [x] correlate API
+- [x] IP search
+- [x] username search
+- [x] hostname search
+- [x] session search
+- [x] domain search
+- [ ] path search
+- [x] candidate asset/user cards
 
 ## Epic 5. Evidence Vault
 - [x] freeze case endpoint
