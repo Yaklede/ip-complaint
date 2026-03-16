@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -9,11 +8,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.auth import RequestPrincipal
+from app.core.serialization import sha256_hex
 from app.models.entities import IngestBatch, NormalizedEvent, RawArtifact, Source
 from app.models.enums import SourceType
 from app.schemas.events import IngestRequest, IngestResponse
 from app.services.audit import AuditLogService
 from app.services.manifest import compute_sha256_for_json
+from app.services.parsers import ParserRegistry
+from app.services.raw_artifact_storage import RawArtifactStorage
 
 
 def ensure_utc(value: datetime) -> datetime:
@@ -23,43 +25,62 @@ def ensure_utc(value: datetime) -> datetime:
 
 
 class IngestService:
-    def __init__(self, session: Session) -> None:
+    def __init__(
+        self,
+        session: Session,
+        raw_artifact_storage: RawArtifactStorage,
+        parser_registry: ParserRegistry,
+    ) -> None:
         self._session = session
         self._audit = AuditLogService(session)
+        self._raw_artifact_storage = raw_artifact_storage
+        self._parser_registry = parser_registry
 
     def ingest(self, payload: IngestRequest, principal: RequestPrincipal) -> IngestResponse:
         source = self._get_or_create_source(payload.source_name, payload.source_type)
         collected_at = ensure_utc(payload.collected_at)
-        records = self._extract_records(payload.payload)
+        parser = self._parser_registry.resolve(source.parser_name, source.type)
+        parsed_artifact = parser.parse(payload.payload, collected_at)
 
         batch = IngestBatch(
             source=source,
             collected_at=collected_at,
-            parser_version=payload.parser_version or "mvp-pass-through",
+            parser_version=payload.parser_version or parsed_artifact.parser_version,
         )
         self._session.add(batch)
         self._session.flush()
 
         artifact_id = uuid.uuid4()
-        artifact_checksum = compute_sha256_for_json(payload.payload)
+        artifact_checksum = sha256_hex(parsed_artifact.raw_bytes)
+        stored_artifact = self._raw_artifact_storage.store(
+            source_name=source.name,
+            collected_at=collected_at,
+            artifact_id=artifact_id,
+            raw_bytes=parsed_artifact.raw_bytes,
+            content_type=parsed_artifact.content_type,
+            extension=parsed_artifact.extension,
+            checksum_sha256=artifact_checksum,
+        )
         raw_artifact = RawArtifact(
             id=artifact_id,
             source=source,
             ingest_batch=batch,
-            object_uri=f"raw://{source.name}/{collected_at:%Y/%m/%d}/{artifact_id}.json",
+            object_uri=stored_artifact.object_uri,
             sha256=artifact_checksum,
             collected_at=collected_at,
             parser_version=batch.parser_version,
             metadata_json={
-                "payload_kind": "string" if isinstance(payload.payload, str) else "record_list",
-                "record_count": len(records),
+                "payload_kind": parsed_artifact.payload_kind,
+                "record_count": len(parsed_artifact.records),
+                "storage": stored_artifact.metadata,
+                "content_type": parsed_artifact.content_type,
             },
         )
         self._session.add(raw_artifact)
         self._session.flush()
 
         created_events: list[NormalizedEvent] = []
-        for record in records:
+        for record in parsed_artifact.records:
             event = self._build_event(
                 record=record,
                 source=source,
@@ -80,6 +101,7 @@ class IngestService:
             after={
                 "sourceName": source.name,
                 "sourceType": source.type.value,
+                "parserName": parser.parser_name,
                 "rawArtifactId": str(raw_artifact.id),
                 "normalizedEventCount": len(created_events),
             },
@@ -101,27 +123,12 @@ class IngestService:
         source = Source(
             name=name,
             type=source_type,
-            parser_name="mvp-pass-through",
+            parser_name=self._parser_registry.default_parser_name(source_type),
             config_json={},
         )
         self._session.add(source)
         self._session.flush()
         return source
-
-    def _extract_records(self, payload: str | list[dict[str, Any]]) -> list[dict[str, Any]]:
-        if isinstance(payload, list):
-            return [item if isinstance(item, dict) else {"message": str(item)} for item in payload]
-
-        try:
-            decoded = json.loads(payload)
-        except json.JSONDecodeError:
-            return [{"message": payload}]
-
-        if isinstance(decoded, list):
-            return [item if isinstance(item, dict) else {"message": str(item)} for item in decoded]
-        if isinstance(decoded, dict):
-            return [decoded]
-        return [{"message": str(decoded)}]
 
     def _build_event(
         self,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from uuid import UUID
 
 from fastapi.testclient import TestClient
@@ -28,18 +29,21 @@ def test_post_events_ingest_creates_records_and_audit_log(
     assert len(body["eventIds"]) == 1
 
     assert db_session.scalar(select(Source).where(Source.name == "waf-prod")) is not None
-    assert (
-        db_session.scalar(
-            select(RawArtifact).where(RawArtifact.id == UUID(body["rawArtifactId"]))
-        )
-        is not None
+    raw_artifact = db_session.scalar(
+        select(RawArtifact).where(RawArtifact.id == UUID(body["rawArtifactId"]))
     )
+    assert raw_artifact is not None
     assert (
         db_session.scalar(
             select(NormalizedEvent).where(NormalizedEvent.id == UUID(body["eventIds"][0]))
         )
         is not None
     )
+    assert raw_artifact.metadata_json["storage"]["backend"] == "filesystem"
+    artifact_path = Path(raw_artifact.object_uri.removeprefix("file://"))
+    assert artifact_path.exists()
+    assert '"ruleName":"admin_path_access"' in artifact_path.read_text(encoding="utf-8")
+
     audit_entry = db_session.scalar(
         select(AuditLog).where(AuditLog.action == "events.ingest").order_by(AuditLog.created_at.desc())
     )

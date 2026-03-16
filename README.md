@@ -67,8 +67,14 @@ pytest apps/api/tests
 - `IAS_OPENSEARCH_URL`: OpenSearch endpoint for readiness checks
 - `IAS_MINIO_ENDPOINT`: MinIO endpoint for readiness checks
 - `IAS_REDIS_URL`: Redis endpoint for readiness checks
+- `IAS_RAW_ARTIFACT_STORAGE_BACKEND`: `filesystem` 또는 `minio`
+- `IAS_RAW_ARTIFACT_STORAGE_DIR`: filesystem backend raw artifact 저장 경로
 - `IAS_AUTH_DEFAULT_ACTOR`: placeholder middleware actor name
 - `IAS_AUTH_DEFAULT_ROLES`: placeholder middleware role list
+- `IAS_MINIO_ACCESS_KEY`: MinIO access key
+- `IAS_MINIO_SECRET_KEY`: MinIO secret key
+- `IAS_MINIO_BUCKET`: raw artifact bucket name
+- `IAS_MINIO_SECURE`: MinIO HTTPS 여부
 
 예시 파일: [`apps/api/.env.example`](/Users/jimin/Desktop/study/ip-complaint/apps/api/.env.example)
 
@@ -101,7 +107,7 @@ pytest apps/api/tests
 
 ## Known Limitations
 
-- Phase 1 ingest는 raw artifact 실제 업로드 대신 메타데이터와 checksum만 저장합니다.
+- Phase 1 ingest는 raw artifact를 filesystem 또는 MinIO에 immutable-style로 저장하지만, OpenSearch 색인은 아직 연결하지 않았습니다.
 - freeze는 manifest JSON snapshot과 document metadata를 DB에 기록하지만 외부 제출용 최종 문서는 생성하지 않습니다.
 - RBAC는 header 기반 placeholder middleware이며 실제 OIDC/SAML 연동은 후속 단계입니다.
 - 웹 UI는 placeholder 중심이며 사건 생성/수정 폼은 아직 없습니다.

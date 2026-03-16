@@ -10,10 +10,10 @@
 
 ## Epic 2. Data & Ingestion
 - [x] source registry 모델 구현
-- [ ] raw artifact 업로드 API
-- [ ] parser 인터페이스
+- [x] raw artifact 업로드 API
+- [x] parser 인터페이스
 - [x] canonical event 모델 구현
-- [ ] sample parsers: nginx, waf, vpn
+- [x] sample parsers: nginx, waf, vpn
 - [x] ingest audit log 작성
 
 ## Epic 3. Case Management

@@ -53,6 +53,11 @@ services:
       IAS_OPENSEARCH_URL: http://opensearch:9200
       IAS_MINIO_ENDPOINT: http://minio:9000
       IAS_REDIS_URL: redis://redis:6379/0
+      IAS_RAW_ARTIFACT_STORAGE_BACKEND: minio
+      IAS_MINIO_ACCESS_KEY: minio
+      IAS_MINIO_SECRET_KEY: minio123
+      IAS_MINIO_BUCKET: incident-raw-artifacts
+      IAS_MINIO_SECURE: "false"
     depends_on:
       - postgres
       - opensearch

@@ -1,39 +1,13 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 from uuid import UUID
 
+from app.core.serialization import canonical_json_bytes, make_json_safe
 from app.models.entities import AttributionLink, Case, Document, Evidence, NormalizedEvent
-
-
-def _json_default(value: Any) -> str | int | float | bool | None:
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-    if isinstance(value, UUID):
-        return str(value)
-    if isinstance(value, Enum):
-        return value.value
-    return str(value)
-
-
-def canonical_json_bytes(payload: Any) -> bytes:
-    return json.dumps(
-        payload,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=_json_default,
-    ).encode("utf-8")
-
-
-def make_json_safe(payload: Any) -> Any:
-    return json.loads(canonical_json_bytes(payload).decode("utf-8"))
 
 
 def compute_sha256_for_json(payload: Any) -> str:
@@ -50,7 +24,7 @@ def build_case_manifest(
     generated_at: datetime,
 ) -> dict[str, Any]:
     manifest = {
-        "generated_at": _json_default(generated_at),
+        "generated_at": generated_at,
         "case": {
             "id": case.id,
             "case_no": case.case_no,

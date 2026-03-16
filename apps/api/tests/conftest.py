@@ -19,6 +19,8 @@ def settings(tmp_path) -> Settings:
         opensearch_url="",
         minio_endpoint="",
         redis_url="",
+        raw_artifact_storage_backend="filesystem",
+        raw_artifact_storage_dir=str(tmp_path / "raw-artifacts"),
         auth_default_actor="pytest",
         auth_default_roles="investigator,lead,admin,auditor,legal_reviewer,privacy_reviewer",
     )

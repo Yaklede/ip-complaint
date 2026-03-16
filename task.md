@@ -36,11 +36,18 @@
 - Completed: Verified `pytest apps/api/tests` (8 passed).
 - Completed: Verified `npm run build --workspace @incident-attribution/web`.
 - Completed: Split work into logical commits and updated repo guidance.
-- Current repo state: clean working tree.
+- Current batch:
+  1. raw artifact storage abstraction
+  2. parser registry abstraction
+  3. ingest path verification
+- Completed current batch:
+  - raw artifact storage backends added (`filesystem`, optional `minio`)
+  - parser registry added with `nginx`, `waf`, `vpn` parser slots
+  - ingest path now writes immutable-style raw artifact content and stores storage metadata
+  - verified `pytest apps/api/tests` after ingest changes
 
 ### Remaining Work
 - [ ] Wire real Postgres/OpenSearch/MinIO persistence paths instead of metadata/readiness-only integration.
-- [ ] Implement raw artifact upload/storage adapter and source-specific parser interface.
 - [ ] Add missing case update flow and richer case management UI/actions.
 - [ ] Add correlate/search APIs and candidate asset/user cards.
 - [ ] Add evidence list UI details, export metadata flow, and export packaging.
@@ -61,4 +68,4 @@
   - `docs/openapi.yaml`
   - `docs/schema.sql`
 - Immediate next step:
-  - Start with raw artifact storage/parser abstraction plus real dependency integration.
+  - Implement case update flow in API first, then expose minimal UI actions.

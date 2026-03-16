@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,6 +24,12 @@ class Settings(BaseSettings):
     opensearch_url: str = "http://localhost:9200"
     minio_endpoint: str = "http://localhost:9000"
     redis_url: str = "redis://localhost:6379/0"
+    raw_artifact_storage_backend: Literal["filesystem", "minio"] = "filesystem"
+    raw_artifact_storage_dir: str = "./data/raw-artifacts"
+    minio_access_key: str = "minio"
+    minio_secret_key: str = "minio123"
+    minio_bucket: str = "incident-raw-artifacts"
+    minio_secure: bool = False
 
     auth_default_actor: str = "system"
     auth_default_roles: str = Field(
