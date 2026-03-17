@@ -135,6 +135,8 @@ export interface EvidenceRecord {
   sha256: string;
   status: EvidenceStatus;
   frozenAt?: string | null;
+  exportedAt?: string | null;
+  metadataJson: Record<string, unknown>;
   createdAt: string;
 }
 

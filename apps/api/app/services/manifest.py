@@ -105,6 +105,7 @@ def build_export_bundle_metadata(
     evidence: list[Evidence],
     documents: list[Document],
     generated_at: datetime,
+    bundle_format: str = "json-package",
 ) -> dict[str, Any]:
     payload = {
         "generated_at": generated_at,
@@ -162,7 +163,7 @@ def build_export_bundle_metadata(
             ],
         },
         "package_plan": {
-            "bundle_format": "metadata-only",
+            "bundle_format": bundle_format,
             "final_legal_filing_generated": False,
             "requires_review": True,
             "evidence_count": len(evidence),

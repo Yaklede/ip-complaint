@@ -8,10 +8,12 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.auth import RequestPrincipal
 from app.core.errors import ApiException
+from app.core.serialization import canonical_json_bytes, make_json_safe
 from app.models.entities import AttributionLink, Case, CaseEvent, Document, Evidence, NormalizedEvent
 from app.models.enums import DocumentStatus, EvidenceStatus
 from app.schemas.cases import ExportResponse, FreezeResponse
 from app.services.audit import AuditLogService
+from app.services.generated_output_storage import GeneratedOutputStorage
 from app.services.manifest import (
     build_case_manifest,
     build_export_bundle_metadata,
@@ -24,9 +26,14 @@ def utcnow() -> datetime:
 
 
 class EvidenceService:
-    def __init__(self, session: Session) -> None:
+    def __init__(
+        self,
+        session: Session,
+        generated_output_storage: GeneratedOutputStorage | None = None,
+    ) -> None:
         self._session = session
         self._audit = AuditLogService(session)
+        self._generated_output_storage = generated_output_storage
 
     def freeze_case(self, case_id: UUID, principal: RequestPrincipal) -> FreezeResponse:
         case, events, attribution_links, existing_evidence, documents = self._load_case_context(case_id)
@@ -127,6 +134,13 @@ class EvidenceService:
         )
 
     def prepare_export_bundle(self, case_id: UUID, principal: RequestPrincipal) -> ExportResponse:
+        if self._generated_output_storage is None:
+            raise ApiException(
+                status_code=500,
+                code="EXPORT_STORAGE_NOT_CONFIGURED",
+                message="Generated output storage is not configured",
+            )
+
         case, events, _, evidence, documents = self._load_case_context(case_id)
         exportable_evidence = [item for item in evidence if item.frozen_at is not None]
         if not exportable_evidence:
@@ -144,7 +158,6 @@ class EvidenceService:
             documents=documents,
             generated_at=generated_at,
         )
-        manifest_checksum = compute_sha256_for_json(export_metadata)
         next_version = int(
             self._session.scalar(
                 select(func.max(Document.version_no)).where(
@@ -159,13 +172,40 @@ class EvidenceService:
             doc_type="export_bundle",
             status=DocumentStatus.DRAFT,
             version_no=next_version,
-            storage_uri=f"export://cases/{case.case_no}/bundle-v{next_version}.json",
-            checksum_sha256=manifest_checksum,
+            storage_uri=f"pending://cases/{case.case_no}/bundle-v{next_version}.json",
+            checksum_sha256="pending",
             generated_from_json=export_metadata,
             generated_at=generated_at,
         )
         self._session.add(document)
         self._session.flush()
+
+        export_payload = make_json_safe(
+            {
+                "bundle_id": document.id,
+                "bundle_type": "evidence_export_bundle",
+                **export_metadata,
+            }
+        )
+        payload_bytes = canonical_json_bytes(export_payload)
+        manifest_checksum = compute_sha256_for_json(export_payload)
+        stored_bundle = self._generated_output_storage.store(
+            category="export-bundles",
+            case_no=case.case_no,
+            generated_at=generated_at,
+            output_id=document.id,
+            payload_bytes=payload_bytes,
+            content_type="application/json",
+            extension="json",
+            checksum_sha256=manifest_checksum,
+        )
+        document.storage_uri = stored_bundle.object_uri
+        document.checksum_sha256 = manifest_checksum
+        document.generated_from_json = export_payload
+
+        for item in exportable_evidence:
+            item.status = EvidenceStatus.EXPORTED
+            item.exported_at = generated_at
 
         self._audit.append(
             actor=principal.actor,
@@ -177,6 +217,7 @@ class EvidenceService:
                 "bundleId": str(document.id),
                 "exportedEvidenceCount": len(exportable_evidence),
                 "manifestChecksum": manifest_checksum,
+                "storageUri": stored_bundle.object_uri,
             },
         )
         self._session.commit()
@@ -185,7 +226,7 @@ class EvidenceService:
             bundle_id=document.id,
             exported_evidence_count=len(exportable_evidence),
             manifest_checksum=manifest_checksum,
-            status="prepared",
+            status="packaged",
         )
 
     def _load_case_context(

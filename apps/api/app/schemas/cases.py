@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from typing import Annotated
 from uuid import UUID
 
@@ -76,6 +77,8 @@ class EvidenceResponse(CamelModel):
     sha256: str
     status: EvidenceStatus
     frozen_at: datetime | None = None
+    exported_at: datetime | None = None
+    metadata_json: dict[str, Any]
     created_at: datetime
 
 

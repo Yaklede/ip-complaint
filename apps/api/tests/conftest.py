@@ -21,6 +21,7 @@ def settings(tmp_path) -> Settings:
         redis_url="",
         raw_artifact_storage_backend="filesystem",
         raw_artifact_storage_dir=str(tmp_path / "raw-artifacts"),
+        generated_output_storage_dir=str(tmp_path / "generated-outputs"),
         auth_default_actor="pytest",
         auth_default_roles="investigator,lead,admin,auditor,legal_reviewer,privacy_reviewer",
     )

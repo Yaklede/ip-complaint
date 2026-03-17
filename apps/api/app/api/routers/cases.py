@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.auth import RequestPrincipal, require_roles
@@ -103,7 +103,11 @@ def freeze_case(
 )
 def prepare_case_export(
     case_id: UUID,
+    request: Request,
     session: Session = Depends(get_db_session),
     principal: RequestPrincipal = Depends(require_roles("investigator", "lead", "admin")),
 ) -> ExportResponse:
-    return EvidenceService(session).prepare_export_bundle(case_id, principal)
+    return EvidenceService(
+        session,
+        generated_output_storage=request.app.state.generated_output_storage,
+    ).prepare_export_bundle(case_id, principal)

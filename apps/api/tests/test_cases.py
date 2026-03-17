@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi.testclient import TestClient
@@ -201,7 +204,7 @@ def test_post_export_prepares_metadata_bundle_and_audit_log(
 
     assert response.status_code == 202
     body = response.json()
-    assert body["status"] == "prepared"
+    assert body["status"] == "packaged"
     assert body["exportedEvidenceCount"] == 2
 
     document = db_session.scalar(
@@ -213,8 +216,22 @@ def test_post_export_prepares_metadata_bundle_and_audit_log(
     assert document.status.value == "DRAFT"
     assert document.checksum_sha256 == body["manifestChecksum"]
     assert document.generated_from_json["bundle_state"] == "DRAFT"
-    assert document.generated_from_json["package_plan"]["bundle_format"] == "metadata-only"
+    assert document.generated_from_json["package_plan"]["bundle_format"] == "json-package"
     assert len(document.generated_from_json["input_snapshot"]["evidence"]) == 2
+    assert document.storage_uri is not None
+
+    export_file = Path(urlparse(document.storage_uri).path)
+    assert export_file.exists()
+    bundle_payload = json.loads(export_file.read_text(encoding="utf-8"))
+    assert bundle_payload["bundle_type"] == "evidence_export_bundle"
+    assert bundle_payload["bundle_id"] == str(document.id)
+
+    evidence_rows = db_session.scalars(
+        select(Evidence).where(Evidence.case_id == UUID(case_id)).order_by(Evidence.created_at.asc())
+    ).all()
+    assert len(evidence_rows) == 2
+    assert all(item.status.value == "EXPORTED" for item in evidence_rows)
+    assert all(item.exported_at is not None for item in evidence_rows)
 
     audit_entry = db_session.scalar(
         select(AuditLog)
@@ -223,3 +240,4 @@ def test_post_export_prepares_metadata_bundle_and_audit_log(
     )
     assert audit_entry is not None
     assert audit_entry.entity_type == "case"
+    assert audit_entry.after_json["storageUri"] == document.storage_uri

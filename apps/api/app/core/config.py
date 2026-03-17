@@ -26,9 +26,11 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     raw_artifact_storage_backend: Literal["filesystem", "minio"] = "filesystem"
     raw_artifact_storage_dir: str = "./data/raw-artifacts"
+    generated_output_storage_dir: str = "./data/generated-outputs"
     minio_access_key: str = "minio"
     minio_secret_key: str = "minio123"
     minio_bucket: str = "incident-raw-artifacts"
+    generated_output_bucket: str = "incident-generated-outputs"
     minio_secure: bool = False
 
     auth_default_actor: str = "system"
