@@ -55,18 +55,22 @@
   - related cases, candidate assets/users, and attribution preview are visible in the web UI
   - verified `npm run build --workspace @incident-attribution/web` and `pytest apps/api/tests`
 - Completed batch:
-  - `POST /v1/cases/{caseId}/export` added for metadata-only draft bundle preparation
+  - `POST /v1/cases/{caseId}/export` added for initial draft bundle preparation
   - export input snapshot, package plan, checksum, and audit log are now persisted
   - case detail UI now exposes a basic export preparation action
   - verified `pytest apps/api/tests` (12 passed) and frontend build after export changes
+- Completed batch:
+  - actual draft export bundle JSON is now stored through generated output storage
+  - exported evidence rows now record `EXPORTED` / `exported_at`
+  - case detail UI now shows evidence/document detail cards with storage and metadata context
+  - verified `pytest apps/api/tests` (12 passed), frontend build, and backend compile after packaging changes
 - Current batch:
-  1. evidence list UI detail expansion
-  2. export packaging groundwork
-  3. real persistence/search backend wiring
+  1. real persistence/search backend wiring
+  2. path-level correlation support
+  3. attribution engine input models
 
 ### Remaining Work
 - [ ] Wire real Postgres/OpenSearch/MinIO persistence paths instead of metadata/readiness-only integration.
-- [ ] Add evidence list UI details and actual export package generation.
 - [ ] Implement attribution engine inputs and A/B/C/D scoring rules.
 - [ ] Implement document generation templates, review API, and document list/download UI.
 - [ ] Add masking utilities, approval workflow, retention settings, and admin surfaces.
@@ -84,4 +88,4 @@
   - `docs/openapi.yaml`
   - `docs/schema.sql`
 - Immediate next step:
-  - Expand evidence list UI detail, then move to actual export package generation.
+  - Wire real OpenSearch/MinIO persistence paths and add path-level correlation support.

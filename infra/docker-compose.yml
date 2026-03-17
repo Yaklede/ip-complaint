@@ -57,6 +57,7 @@ services:
       IAS_MINIO_ACCESS_KEY: minio
       IAS_MINIO_SECRET_KEY: minio123
       IAS_MINIO_BUCKET: incident-raw-artifacts
+      IAS_GENERATED_OUTPUT_BUCKET: incident-generated-outputs
       IAS_MINIO_SECURE: "false"
     depends_on:
       - postgres

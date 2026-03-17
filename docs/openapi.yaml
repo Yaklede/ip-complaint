@@ -411,7 +411,7 @@ components:
           type: string
         status:
           type: string
-          example: prepared
+          example: packaged
     GenerateDocumentRequest:
       type: object
       required: [docType, templateVersion]
@@ -610,6 +610,12 @@ components:
         frozenAt:
           type: string
           format: date-time
+        exportedAt:
+          type: string
+          format: date-time
+        metadataJson:
+          type: object
+          additionalProperties: true
         createdAt:
           type: string
           format: date-time

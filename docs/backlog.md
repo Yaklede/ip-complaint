@@ -37,8 +37,9 @@
 ## Epic 5. Evidence Vault
 - [x] freeze case endpoint
 - [x] manifest JSON 생성
-- [ ] evidence list UI
+- [x] evidence list UI
 - [x] export metadata
+- [x] draft export package generation
 - [x] checksum validation
 
 ## Epic 6. Attribution Engine
