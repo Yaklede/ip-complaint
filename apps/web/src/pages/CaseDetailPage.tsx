@@ -13,6 +13,16 @@ const CASE_STATUSES: CaseStatus[] = [
   "REJECTED",
 ];
 
+function truncateValue(value: string | null | undefined, visible = 18) {
+  if (!value) {
+    return "-";
+  }
+  if (value.length <= visible * 2) {
+    return value;
+  }
+  return `${value.slice(0, visible)}...${value.slice(-visible)}`;
+}
+
 export function CaseDetailPage() {
   const { caseId } = useParams();
   const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
@@ -244,13 +254,43 @@ export function CaseDetailPage() {
           {caseDetail.evidence.length === 0 ? (
             <p className="muted">freeze 전이라 증거 목록이 비어 있습니다.</p>
           ) : (
-            <ul className="simple-list">
+            <div className="detail-list">
               {caseDetail.evidence.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.evidenceType}</strong> · {item.status} · {item.sha256.slice(0, 12)}...
-                </li>
+                <article key={item.id} className="detail-card">
+                  <p className="eyebrow">{item.evidenceType}</p>
+                  <h3>{item.status}</h3>
+                  <dl className="key-value-list">
+                    <div>
+                      <dt>Checksum</dt>
+                      <dd className="mono-text">{truncateValue(item.sha256)}</dd>
+                    </div>
+                    <div>
+                      <dt>Object URI</dt>
+                      <dd className="mono-text">{truncateValue(item.objectUri)}</dd>
+                    </div>
+                    <div>
+                      <dt>Raw Artifact</dt>
+                      <dd className="mono-text">{truncateValue(item.rawArtifactId)}</dd>
+                    </div>
+                    <div>
+                      <dt>Normalized Event</dt>
+                      <dd className="mono-text">{truncateValue(item.normalizedEventId)}</dd>
+                    </div>
+                    <div>
+                      <dt>Frozen At</dt>
+                      <dd>{item.frozenAt ?? "-"}</dd>
+                    </div>
+                    <div>
+                      <dt>Exported At</dt>
+                      <dd>{item.exportedAt ?? "-"}</dd>
+                    </div>
+                  </dl>
+                  <pre className="json-preview">
+                    {JSON.stringify(item.metadataJson, null, 2)}
+                  </pre>
+                </article>
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
@@ -275,22 +315,36 @@ export function CaseDetailPage() {
                 }
               }}
             >
-              {exportState === "preparing" ? "Preparing..." : "Prepare Export"}
+              {exportState === "preparing" ? "Packaging..." : "Package Draft Export"}
             </button>
           </div>
           {caseDetail.documents.length === 0 ? (
             <p className="muted">생성된 문서가 없습니다.</p>
           ) : (
-            <ul className="simple-list">
+            <div className="detail-list">
               {caseDetail.documents.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.docType}</strong> · {item.status} · v{item.versionNo}
-                </li>
+                <article key={item.id} className="detail-card">
+                  <p className="eyebrow">{item.docType}</p>
+                  <h3>
+                    v{item.versionNo} · {item.status}
+                  </h3>
+                  <p className="muted">Generated {item.generatedAt}</p>
+                  <dl className="key-value-list">
+                    <div>
+                      <dt>Checksum</dt>
+                      <dd className="mono-text">{truncateValue(item.checksumSha256)}</dd>
+                    </div>
+                    <div>
+                      <dt>Storage URI</dt>
+                      <dd className="mono-text">{truncateValue(item.storageUri)}</dd>
+                    </div>
+                  </dl>
+                </article>
               ))}
-            </ul>
+            </div>
           )}
           <p className="muted">
-            export는 metadata-only draft bundle만 생성하며 최종 제출 문서는 만들지 않습니다.
+            export는 draft JSON bundle을 생성하지만 최종 제출 문서나 자동 신고는 수행하지 않습니다.
           </p>
         </div>
       </section>
